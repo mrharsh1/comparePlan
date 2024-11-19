@@ -15,6 +15,7 @@ type InsuranceData = {
   plan2: string | number;
   plan3?: string | number; // Optional for dynamic handling
 };
+const baseUrl= "https://compareplan-1.onrender.com" || "http://localhost:10000";
 
 // Define Props Interface
 type InsuranceTableProps = {
@@ -105,7 +106,7 @@ const InsuranceTable: React.FC<InsuranceTableProps> = ({ slug }) => {
     ];
 
     try {
-      const response = await fetch("http://localhost:10000/api/bima-score");
+      const response = await fetch(`${baseUrl}/api/bima-score`);
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
