@@ -15,7 +15,7 @@ type InsuranceData = {
   plan2: string | number;
   plan3?: string | number; // Optional for dynamic handling
 };
-const baseUrl= "https://compareplan-1.onrender.com" || "http://localhost:10000";
+const baseUrl= "https://compareplan-1.onrender.com";
 
 // Define Props Interface
 type InsuranceTableProps = {
