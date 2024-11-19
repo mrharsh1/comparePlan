@@ -12,11 +12,8 @@ export default function Compare() {
 
   useEffect(() => {
     if (slug) {
-      // Ensure slug is a string
-      const slugString = Array.isArray(slug) ? slug.join("") : slug;
-
       // Decode the URL to replace %20 with spaces
-      const decodedSlug = decodeURIComponent(slugString);
+      const decodedSlug = decodeURIComponent(slug);
 
       const planArray = decodedSlug.split("-vs-");
 
