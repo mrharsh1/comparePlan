@@ -16,7 +16,7 @@ export default function Home() {
     { planName: string; insurerName: string }[]
   >([]);
   const router = useRouter();
-const baseUrl= "https://compareplan-1.onrender.com" || "http://localhost:10000";
+const baseUrl= "https://compareplan.onrender.com" || "http://localhost:10000";
   // Fetch insurers from the API on component mount
   useEffect(() => {
     const fetchInsurers = async () => {
