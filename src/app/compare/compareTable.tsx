@@ -1,6 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: any;
+  }
+}
 import jsPDF from "jspdf";
 import "jspdf-autotable"; // Required for auto table support in jsPDF
 
@@ -11,12 +16,19 @@ type InsuranceData = {
   plan3?: string | number; // Optional for dynamic handling
 };
 
-const InsuranceTable: React.FC = () => {
-  const { slug } = useParams();
+// Define Props Interface
+type InsuranceTableProps = {
+  slug?: string; // Optional, fetched from useParams if not passed directly
+};
+
+const InsuranceTable: React.FC<InsuranceTableProps> = ({ slug }) => {
+  const { slug: paramSlug } = useParams();
   const [insuranceData, setInsuranceData] = useState<InsuranceData[]>([]);
   const [plans, setPlans] = useState<{ insurer: string; plan: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const resolvedSlug = slug || paramSlug; // Use prop slug if provided, else fallback to URL param
 
   // Parameters categorized into three sections
   const mostImportantFeatures = [
@@ -53,10 +65,12 @@ const InsuranceTable: React.FC = () => {
   ];
 
   useEffect(() => {
-    if (slug) {
-      const decodedSlug = decodeURIComponent(slug);
+    if (resolvedSlug) {
+      // Ensure resolvedSlug is a string
+      const slugAsString = Array.isArray(resolvedSlug) ? resolvedSlug[0] : resolvedSlug;
+      const decodedSlug = decodeURIComponent(slugAsString);
       const planArray = decodedSlug.split("-vs-");
-
+  
       if (planArray.length < 2 || planArray.length > 3) {
         setError(
           "Invalid slug format. Expected format: 'insurer-plan-vs-insurer-plan' or 3 plans for comparison."
@@ -64,7 +78,7 @@ const InsuranceTable: React.FC = () => {
         setLoading(false);
         return;
       }
-
+  
       const formattedPlans = planArray.map((plan) => {
         const [insurer, ...planNameParts] = plan.split("-");
         const planName = planNameParts.join(" ");
@@ -73,14 +87,15 @@ const InsuranceTable: React.FC = () => {
           plan: planName.replace(/-/g, " "),
         };
       });
-
+  
       setPlans(formattedPlans);
       fetchData(formattedPlans);
     } else {
       setError("Slug is missing in the URL.");
       setLoading(false);
     }
-  }, [slug]);
+  }, [resolvedSlug]);
+  
 
   const fetchData = async (plans: { insurer: string; plan: string }[]) => {
     const requiredFeatures = [
@@ -187,16 +202,18 @@ const InsuranceTable: React.FC = () => {
   const downloadPDF = () => {
     const doc = new jsPDF();
     const { headers, body } = generateTableData();
-
+  
     doc.autoTable({
       head: [headers],
       body,
-      startY: 20,
-      theme: "grid",
+      startY: 20, // Start the table after some margin
+      theme: "grid", // This sets the table's style
     });
-
+  
     doc.save("insurance_comparison.pdf");
   };
+  
+  
 
   const downloadCSV = () => {
     const headers = [
@@ -212,13 +229,13 @@ const InsuranceTable: React.FC = () => {
       plans.forEach((_, index) => {
         rowData.push(
           row[`plan${index + 1}` as keyof InsuranceData] !== "N/A"
-            ? row[`plan${index + 1}` as keyof InsuranceData]
+            ? String(row[`plan${index + 1}` as keyof InsuranceData] || "")  // Ensure a string is passed
             : ""
         );
       });
       return rowData;
     });
-
+  
     const csvContent = [
       headers.join(","),
       ...rows.map((row) => row.join(",")),
@@ -229,6 +246,7 @@ const InsuranceTable: React.FC = () => {
     link.download = "insurance_comparison.csv";
     link.click();
   };
+  
 
   const mostImportantData = insuranceData.filter((item) =>
     mostImportantFeatures.includes(item.parameter)

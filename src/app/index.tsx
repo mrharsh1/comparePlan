@@ -1,5 +1,4 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
@@ -9,26 +8,28 @@ type Insurer = {
   plans: string[];
 };
 
+type ApiResponseItem = {
+  Company: string;
+  Plan: string;
+};
+
 export default function Home() {
   const [insurers, setInsurers] = useState<Insurer[]>([]);
   const [selectedInsurer, setSelectedInsurer] = useState<Insurer | null>(null);
   const [selectedPlans, setSelectedPlans] = useState<
     { planName: string; insurerName: string }[]
   >([]);
-  const router = useRouter();
 
   // Fetch insurers from the API on component mount
   useEffect(() => {
     const fetchInsurers = async () => {
       try {
         const response = await fetch("http://localhost:10000/api/bima-score");
-        const data = await response.json();
+        const data: ApiResponseItem[] = await response.json(); // Define type for response data
   
         // Transform the raw JSON data
-        const formattedData = data.reduce((acc: Insurer[], item: any) => {
-          const insurerIndex = acc.findIndex(
-            (insurer) => insurer.name === item.Company
-          );
+        const formattedData = data.reduce((acc: Insurer[], item: ApiResponseItem) => {
+          const insurerIndex = acc.findIndex((insurer) => insurer.name === item.Company);
           if (insurerIndex === -1) {
             acc.push({ name: item.Company, plans: [item.Plan] });
           } else {
@@ -47,7 +48,6 @@ export default function Home() {
   
     fetchInsurers();
   }, []);
-  
 
   // Handle insurer selection
   const handleInsurerSelect = (insurer: Insurer) => {

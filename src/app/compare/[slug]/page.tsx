@@ -12,29 +12,36 @@ export default function Compare() {
 
   useEffect(() => {
     if (slug) {
-      // Decode the URL to replace %20 with spaces
-      const decodedSlug = decodeURIComponent(slug);
+      // Ensure slug is treated as a string
+      const slugString = Array.isArray(slug) ? slug[0] : slug;
 
-      const planArray = decodedSlug.split("-vs-");
+      try {
+        // Decode the URL to replace %20 with spaces
+        const decodedSlug = decodeURIComponent(slugString);
 
-      if (planArray.length < 2) {
-        setError("Invalid slug format. Expected format: 'insurer-plan-vs-insurer-plan'");
-        return;
+        const planArray = decodedSlug.split("-vs-");
+
+        if (planArray.length < 2) {
+          setError("Invalid slug format. Expected format: 'insurer-plan-vs-insurer-plan'");
+          return;
+        }
+
+        const formattedPlans = planArray.map((plan) => {
+          const [insurer, ...planNameParts] = plan.split("-");
+          const planName = planNameParts.join(" "); // Join parts with spaces
+
+          return {
+            insurer: insurer.replace(/-/g, " "), // Replace hyphens with spaces in insurer name
+            plan: planName.replace(/-/g, " "), // Replace hyphens with spaces in plan name
+          };
+        });
+
+        setPlan1(formattedPlans[0]);
+        setPlan2(formattedPlans[1]);
+        setPlans(formattedPlans); // Set both plans
+      } catch (err) {
+        setError("Failed to process slug. Please check the format.");
       }
-
-      const formattedPlans = planArray.map((plan) => {
-        const [insurer, ...planNameParts] = plan.split("-");
-        const planName = planNameParts.join(" "); // Join parts with spaces
-
-        return {
-          insurer: insurer.replace(/-/g, " "), // Replace hyphens with spaces in insurer name
-          plan: planName.replace(/-/g, " "), // Replace hyphens with spaces in plan name
-        };
-      });
-
-      setPlan1(formattedPlans[0]);
-      setPlan2(formattedPlans[1]);
-      setPlans(formattedPlans); // Set both plans
     } else {
       setError("Slug is missing in the URL.");
     }
@@ -72,7 +79,7 @@ export default function Compare() {
       )}
 
       {/* Pass the plans data to the InsuranceTable component */}
-      <InsuranceTable plans={plans} />
+      <InsuranceTable/>
     </div>
   );
 }
