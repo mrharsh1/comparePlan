@@ -23,35 +23,31 @@ export default function Home() {
       try {
         const response = await fetch("http://localhost:5000/api/bima-score");
         const data = await response.json();
-
-        // Check the structure of the fetched data
-        console.log("Fetched insurers data:", data);
-
-        // Transform the raw JSON data into insurers and unique plans
+  
+        // Transform the raw JSON data
         const formattedData = data.reduce((acc: Insurer[], item: any) => {
           const insurerIndex = acc.findIndex(
             (insurer) => insurer.name === item.Company
           );
           if (insurerIndex === -1) {
-            // Add new insurer with the initial plan
             acc.push({ name: item.Company, plans: [item.Plan] });
           } else {
-            // Add plan only if it doesn't already exist
             if (!acc[insurerIndex].plans.includes(item.Plan)) {
               acc[insurerIndex].plans.push(item.Plan);
             }
           }
           return acc;
-        }, []); // Initializing with an empty array to store the formatted insurers data
-
-        setInsurers(formattedData); // Set the insurers state with the newly formatted data
+        }, []);
+  
+        setInsurers(formattedData);
       } catch (error) {
         console.error("Error fetching insurers:", error);
       }
     };
-
+  
     fetchInsurers();
   }, []);
+  
 
   // Handle insurer selection
   const handleInsurerSelect = (insurer: Insurer) => {
@@ -82,7 +78,7 @@ export default function Home() {
         (plan) =>
           `${plan.insurerName.toLowerCase()}-${plan.planName
             .toLowerCase()
-            .replace(/\s+/g, "-")}` // Convert spaces in plan name to hyphens and lowercase the names
+            .replace(/\s+/g, "-")}`
       )
       .join("-vs-");
   };

@@ -1,30 +1,43 @@
-// server.js
-const express = require('express');
-const apiRoute = require('./server/api/yourApiRoute.js'); // Import the API routes
-const cors = require('cors'); // Import CORS if needed globally
+const express = require("express");
+const mysql = require("mysql2");
+const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const port = 5000;
 
-// Middleware
-app.use(express.json()); // Parse JSON bodies
-app.use(cors()); // Apply CORS globally, or use as middleware per route in yourApiRoute if needed
+// Enable CORS
+app.use(cors());
 
-// Route setup
-app.use('/api', apiRoute);
-
-// Root endpoint for server health check
-app.get('/', (req, res) => {
-    res.send('Server is running!');
+// Create connection to MySQL
+const db = mysql.createConnection({
+    host: "localhost", // Hostname (phpMyAdmin ke liye usually localhost)
+    user: "root", // Your MySQL username
+    password: "", // Your MySQL password
+    database: "bimascoredb", // Database name
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something went wrong!');
+// Test connection
+db.connect((err) => {
+    if (err) {
+        console.error("Database connection failed:", err.stack);
+        return;
+    }
+    console.log("Connected to MySQL database on aws");
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+// API endpoint to fetch data from "mytable"
+app.get("/api/bima-score", (req, res) => {
+    const query = "SELECT * FROM mytable";
+    db.query(query, (err, results) => {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+// Start server
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
 });

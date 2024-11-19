@@ -1,26 +1,66 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import jsPDF from "jspdf";
+import "jspdf-autotable"; // Required for auto table support in jsPDF
 
 type InsuranceData = {
   parameter: string;
   plan1: string | number;
   plan2: string | number;
+  plan3?: string | number; // Optional for dynamic handling
 };
 
 const InsuranceTable: React.FC = () => {
   const { slug } = useParams();
   const [insuranceData, setInsuranceData] = useState<InsuranceData[]>([]);
-  const [plan1, setPlan1] = useState<{ insurer: string; plan: string } | null>(null);
-  const [plan2, setPlan2] = useState<{ insurer: string; plan: string } | null>(null);
+  const [plans, setPlans] = useState<{ insurer: string; plan: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Parameters categorized into three sections
+  const mostImportantFeatures = [
+    "ROOM RENT",
+    "MATERNITY",
+    "POST-HOSPITALIZATION",
+    "PRE HOSPITALIZATION",
+    "AMBULANCE COVER",
+    "RESTORE BENEFIT",
+    "MENTAL ILLNESS",
+    "TPA",
+    "AIR AMBULANCE",
+  ];
+
+  const additionalFeatures = [
+    "GLOBAL COVER",
+    "ANNUAL PREVENTIVE HEALTH CHECK-UP COVER",
+    "AYUSH BENEFIT",
+    "OUT-PATIENT TREATMENT (OPD)",
+    "MODERN TREATMENT",
+    "BARIATRIC SURGERY",
+    "TELECONSULTATIONS/E CONSULTATIONS",
+    "SECOND OPINION/ E OPINION",
+    "CONSUMABLES",
+  ];
+
+  const leastImportantFeatures = [
+    "ORGAN DONOR",
+    "CO-PAYMENT FOR SENIOR AGE",
+    "CO PAYMENT OUT OF NETWORK",
+    "CO-PAYMENT FOR TREATMENT IN A HIGHER ZONE",
+    "NEW BORN BABY COVER",
+    "CUMULATIVE BONUS",
+  ];
+
   useEffect(() => {
     if (slug) {
-      const planArray = slug.split("-vs-");
-      if (planArray.length !== 2) {
-        setError("Invalid slug format. Expected format: 'insurer-plan-vs-insurer-plan'");
+      const decodedSlug = decodeURIComponent(slug);
+      const planArray = decodedSlug.split("-vs-");
+
+      if (planArray.length < 2 || planArray.length > 3) {
+        setError(
+          "Invalid slug format. Expected format: 'insurer-plan-vs-insurer-plan' or 3 plans for comparison."
+        );
         setLoading(false);
         return;
       }
@@ -34,9 +74,7 @@ const InsuranceTable: React.FC = () => {
         };
       });
 
-      setPlan1(formattedPlans[0]);
-      setPlan2(formattedPlans[1]);
-
+      setPlans(formattedPlans);
       fetchData(formattedPlans);
     } else {
       setError("Slug is missing in the URL.");
@@ -45,6 +83,12 @@ const InsuranceTable: React.FC = () => {
   }, [slug]);
 
   const fetchData = async (plans: { insurer: string; plan: string }[]) => {
+    const requiredFeatures = [
+      ...mostImportantFeatures,
+      ...additionalFeatures,
+      ...leastImportantFeatures,
+    ];
+
     try {
       const response = await fetch("http://localhost:5000/api/bima-score");
       if (!response.ok) {
@@ -52,53 +96,48 @@ const InsuranceTable: React.FC = () => {
       }
 
       const data = await response.json();
-
-      // Ensure data.data is defined and is an array
-      if (!data || !Array.isArray(data.data)) {
-        throw new Error("API response is not in the expected format.");
-      }
-
       const filteredData: InsuranceData[] = [];
       const featureSet = new Set();
 
-      // Process each feature in the API response
-      data.data.forEach((item: any) => {
+      data.forEach((item: any) => {
         const featureName = item.STANDARD_FEATURE_NAME;
-        const status = item.Status || "";
+        if (!requiredFeatures.includes(featureName)) return;
+
         const remark = item.Conditions_Remark || "";
         const company = item.Company?.toLowerCase().trim();
         const plan = item.Plan?.toLowerCase().trim();
+        const formattedValue = remark || "N/A";
 
-        // Concatenate status and remark
-        const formattedValue = status && remark ? `${status} and ${remark}` : status || remark || "N/A";
-
-        // Only add new feature if it's not already added
         if (!featureSet.has(featureName)) {
           filteredData.push({
             parameter: featureName,
             plan1: "N/A",
             plan2: "N/A",
+            plan3: plans.length === 3 ? "N/A" : undefined,
           });
           featureSet.add(featureName);
         }
 
         const row = filteredData.find((r) => r.parameter === featureName);
-
         if (row) {
-          // Match plan 1
           if (
             plans[0]?.insurer.toLowerCase() === company &&
             plans[0]?.plan.toLowerCase() === plan
           ) {
             row.plan1 = formattedValue;
           }
-
-          // Match plan 2
           if (
             plans[1]?.insurer.toLowerCase() === company &&
             plans[1]?.plan.toLowerCase() === plan
           ) {
             row.plan2 = formattedValue;
+          }
+          if (
+            plans[2] &&
+            plans[2]?.insurer.toLowerCase() === company &&
+            plans[2]?.plan.toLowerCase() === plan
+          ) {
+            row.plan3 = formattedValue;
           }
         }
       });
@@ -112,52 +151,250 @@ const InsuranceTable: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <div className="text-center pt-24">
-          <p className="text-gray-500 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const generateTableData = () => {
+    const combinedData = [
+      { category: "Most Important Points", data: mostImportantData },
+      { category: "Additional Points", data: additionalData },
+      { category: "Least Important Points", data: leastImportantData },
+    ];
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <div className="text-center pt-24">
-          <p className="text-gray-500 text-sm">Error</p>
-          <p className="text-5xl text-black py-5">{error}</p>
-        </div>
-      </div>
-    );
-  }
+    const headers = [
+      "Parameter",
+      ...plans.map((plan) => `${plan.insurer} - ${plan.plan}`),
+    ];
+    const body = combinedData.flatMap(({ category, data }) => [
+      [
+        {
+          content: category,
+          colSpan: plans.length + 1,
+          styles: { fillColor: [200, 230, 255] },
+        },
+      ],
+      ...data.map((row) => [
+        { content: row.parameter, styles: { fillColor: [255, 255, 255] } },
+        ...plans.map((_, index) => ({
+          content: row[`plan${index + 1}` as keyof InsuranceData] || "",
+          styles: {
+            fillColor: index % 2 === 0 ? [240, 240, 240] : [255, 255, 255],
+          },
+        })),
+      ]),
+    ]);
+
+    return { headers, body };
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    const { headers, body } = generateTableData();
+
+    doc.autoTable({
+      head: [headers],
+      body,
+      startY: 20,
+      theme: "grid",
+    });
+
+    doc.save("insurance_comparison.pdf");
+  };
+
+  const downloadCSV = () => {
+    const headers = [
+      "Parameter",
+      ...plans.map((plan) => `${plan.insurer} - ${plan.plan}`),
+    ];
+    const rows = [
+      ...mostImportantData,
+      ...additionalData,
+      ...leastImportantData,
+    ].map((row) => {
+      const rowData = [row.parameter];
+      plans.forEach((_, index) => {
+        rowData.push(
+          row[`plan${index + 1}` as keyof InsuranceData] !== "N/A"
+            ? row[`plan${index + 1}` as keyof InsuranceData]
+            : ""
+        );
+      });
+      return rowData;
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "insurance_comparison.csv";
+    link.click();
+  };
+
+  const mostImportantData = insuranceData.filter((item) =>
+    mostImportantFeatures.includes(item.parameter)
+  );
+  const additionalData = insuranceData.filter((item) =>
+    additionalFeatures.includes(item.parameter)
+  );
+  const leastImportantData = insuranceData.filter((item) =>
+    leastImportantFeatures.includes(item.parameter)
+  );
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <div className="container mx-auto my-10 p-4">
+      <div className="mb-6">
+        <button
+          onClick={downloadCSV}
+          className="mr-4 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+        >
+          Download CSV
+        </button>
+        <button
+          onClick={downloadPDF}
+          className="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700"
+        >
+          Download PDF
+        </button>
+      </div>
+      {/* Rest of the table rendering */}
       <div className="overflow-x-auto shadow-lg rounded-lg">
         <table className="min-w-full border-collapse border border-gray-200 rounded-lg">
           <thead>
             <tr className="bg-gradient-to-r from-blue-500 to-blue-700 text-white">
-              <th className="p-6 text-left border border-gray-200 rounded-tl-lg">COMPARE INSURANCES</th>
-              <th className="p-6 text-left border border-gray-200">
-                {plan1?.insurer} - {plan1?.plan}
+              <th className="p-6 text-left font-bold capitalize border border-gray-200">
+                Parameter
               </th>
-              <th className="p-6 text-left border border-gray-200">
-                {plan2?.insurer} - {plan2?.plan}
-              </th>
+              {plans.map((plan, index) => (
+                <th
+                  key={index}
+                  className="p-6 text-left font-bold uppercase border border-gray-200"
+                >
+                  {plan.insurer} - {plan.plan}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="bg-white">
-            {insuranceData.map((row, index) => (
-              <tr key={index} className={`${index % 2 === 0 ? "bg-gray-100" : "bg-gray-50"}`}>
-                <td className="p-4 border border-gray-200">{row.parameter}</td>
-                <td className="p-4 border border-gray-200">
+
+          <tbody>
+            <tr className="bg-gray-100">
+              <td
+                colSpan={plans.length + 1}
+                className="p-4 font-bold text-left bg-sky-200"
+              >
+                Most Important Points
+              </td>
+            </tr>
+            {mostImportantData.map((row, index) => (
+              <tr key={index}>
+                <td className="p-4 border border-gray-200 bg-white">
+                  {row.parameter}
+                </td>
+                <td
+                  className={`p-4 border border-gray-200 ${
+                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                  }`}
+                >
                   {row.plan1 !== "N/A" ? row.plan1 : ""}
                 </td>
-                <td className="p-4 border border-gray-200">
+                <td
+                  className={`p-4 border border-gray-200 ${
+                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                  }`}
+                >
                   {row.plan2 !== "N/A" ? row.plan2 : ""}
                 </td>
+                {plans.length === 3 && (
+                  <td
+                    className={`p-4 border border-gray-200 ${
+                      index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                    }`}
+                  >
+                    {row.plan3 !== "N/A" ? row.plan3 : ""}
+                  </td>
+                )}
+              </tr>
+            ))}
+
+            {/* Additional Points */}
+            <tr className="bg-gray-100">
+              <td
+                colSpan={plans.length + 1}
+                className="p-4 font-bold text-left bg-sky-200"
+              >
+                Additional Points
+              </td>
+            </tr>
+            {additionalData.map((row, index) => (
+              <tr key={index}>
+                <td className="p-4 border border-gray-200 bg-white">
+                  {row.parameter}
+                </td>
+                <td
+                  className={`p-4 border border-gray-200 ${
+                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                  }`}
+                >
+                  {row.plan1 !== "N/A" ? row.plan1 : ""}
+                </td>
+                <td
+                  className={`p-4 border border-gray-200 ${
+                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                  }`}
+                >
+                  {row.plan2 !== "N/A" ? row.plan2 : ""}
+                </td>
+                {plans.length === 3 && (
+                  <td
+                    className={`p-4 border border-gray-200 ${
+                      index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                    }`}
+                  >
+                    {row.plan3 !== "N/A" ? row.plan3 : ""}
+                  </td>
+                )}
+              </tr>
+            ))}
+
+            {/* Least Important Points */}
+            <tr className="bg-gray-100">
+              <td
+                colSpan={plans.length + 1}
+                className="p-4 font-bold text-left bg-sky-200"
+              >
+                Least Important Points
+              </td>
+            </tr>
+            {leastImportantData.map((row, index) => (
+              <tr key={index}>
+                <td className="p-4 border border-gray-200 bg-white">
+                  {row.parameter}
+                </td>
+                <td
+                  className={`p-4 border border-gray-200 ${
+                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                  }`}
+                >
+                  {row.plan1 !== "N/A" ? row.plan1 : ""}
+                </td>
+                <td
+                  className={`p-4 border border-gray-200 ${
+                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                  }`}
+                >
+                  {row.plan2 !== "N/A" ? row.plan2 : ""}
+                </td>
+                {plans.length === 3 && (
+                  <td
+                    className={`p-4 border border-gray-200 ${
+                      index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                    }`}
+                  >
+                    {row.plan3 !== "N/A" ? row.plan3 : ""}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

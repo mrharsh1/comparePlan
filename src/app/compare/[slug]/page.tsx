@@ -12,7 +12,10 @@ export default function Compare() {
 
   useEffect(() => {
     if (slug) {
-      const planArray = slug.split("-vs-");
+      // Decode the URL to replace %20 with spaces
+      const decodedSlug = decodeURIComponent(slug);
+
+      const planArray = decodedSlug.split("-vs-");
 
       if (planArray.length < 2) {
         setError("Invalid slug format. Expected format: 'insurer-plan-vs-insurer-plan'");
@@ -21,11 +24,11 @@ export default function Compare() {
 
       const formattedPlans = planArray.map((plan) => {
         const [insurer, ...planNameParts] = plan.split("-");
-        const planName = planNameParts.join(" ");
+        const planName = planNameParts.join(" "); // Join parts with spaces
 
         return {
-          insurer: insurer.replace(/-/g, " "),
-          plan: planName.replace(/-/g, " "),
+          insurer: insurer.replace(/-/g, " "), // Replace hyphens with spaces in insurer name
+          plan: planName.replace(/-/g, " "), // Replace hyphens with spaces in plan name
         };
       });
 
@@ -56,11 +59,11 @@ export default function Compare() {
       </div>
 
       {plans.length > 0 && (
-        <div className="text-center py-6">
-          <h2 className="text-3xl font-bold text-gray-800">
+        <div className="text-center py-6 capitalize">
+          <h2 className="text-3xl font-bold  text-gray-800">
             {plans.map((plan, idx) => (
               <span key={idx}>
-                {plan.insurer} {plan.plan}
+                {plan.insurer} - {plan.plan}
                 {idx < plans.length - 1 && " vs "}
               </span>
             ))}
@@ -68,19 +71,8 @@ export default function Compare() {
         </div>
       )}
 
-      {/* Table to compare Plan 1 and Plan 2 */}
-      <InsuranceTable />
-
+      {/* Pass the plans data to the InsuranceTable component */}
+      <InsuranceTable plans={plans} />
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
