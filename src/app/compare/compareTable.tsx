@@ -90,7 +90,7 @@ const InsuranceTable: React.FC = () => {
     ];
 
     try {
-      const response = await fetch("http://localhost:5000/api/bima-score");
+      const response = await fetch("http://localhost:10000/api/bima-score");
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }

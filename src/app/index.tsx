@@ -21,7 +21,7 @@ export default function Home() {
   useEffect(() => {
     const fetchInsurers = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/bima-score");
+        const response = await fetch("http://localhost:10000/api/bima-score");
         const data = await response.json();
   
         // Transform the raw JSON data
