@@ -19,43 +19,40 @@ export default function Home() {
   const [selectedPlans, setSelectedPlans] = useState<
     { planName: string; insurerName: string }[]
   >([]);
-<<<<<<< HEAD
 
-=======
-  const router = useRouter();
-const baseUrl= "https://compareplan-1.onrender.com" || "http://localhost:10000";
->>>>>>> e228c9f5d03490fa5382c4ec4788aca9c4c38bcf
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? "https://compareplan-1.onrender.com"
+      : "http://localhost:10000";
+
   // Fetch insurers from the API on component mount
   useEffect(() => {
     const fetchInsurers = async () => {
       try {
-<<<<<<< HEAD
-        const response = await fetch("http://localhost:10000/api/bima-score");
-        const data: ApiResponseItem[] = await response.json(); // Define type for response data
-=======
         const response = await fetch(`${baseUrl}/api/bima-score`);
-        const data = await response.json();
->>>>>>> e228c9f5d03490fa5382c4ec4788aca9c4c38bcf
-  
-        // Transform the raw JSON data
-        const formattedData = data.reduce((acc: Insurer[], item: ApiResponseItem) => {
-          const insurerIndex = acc.findIndex((insurer) => insurer.name === item.Company);
-          if (insurerIndex === -1) {
-            acc.push({ name: item.Company, plans: [item.Plan] });
-          } else {
-            if (!acc[insurerIndex].plans.includes(item.Plan)) {
-              acc[insurerIndex].plans.push(item.Plan);
+        const data: ApiResponseItem[] = await response.json();
+
+        // Filter out invalid entries and transform data
+        const formattedData = data
+          .filter(item => item.Company && item.Company.trim() !== "") // Filter invalid entries
+          .reduce((acc: Insurer[], item: ApiResponseItem) => {
+            const insurerIndex = acc.findIndex((insurer) => insurer.name === item.Company);
+            if (insurerIndex === -1) {
+              acc.push({ name: item.Company, plans: [item.Plan] });
+            } else {
+              if (!acc[insurerIndex].plans.includes(item.Plan)) {
+                acc[insurerIndex].plans.push(item.Plan);
+              }
             }
-          }
-          return acc;
-        }, []);
-  
+            return acc;
+          }, []);
+
         setInsurers(formattedData);
       } catch (error) {
         console.error("Error fetching insurers:", error);
       }
     };
-  
+
     fetchInsurers();
   }, []);
 
