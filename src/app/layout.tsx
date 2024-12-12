@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import Navbar from './pages/Navbar'
+// import Footer from "./components/footer";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
+
+const SFPro = localFont({
+  src: "./fonts/sf-pro-display-medium.woff2",
+  variable: "--SF-Pro",
   weight: "100 900",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+
 
 export const metadata: Metadata = {
   title: "Alps Insurance - Compare Plan",
@@ -25,10 +24,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+        className={`${SFPro.variable} antialiased`}
+    >
+      <Navbar />
         {children}
+      {/* <Footer /> */}
+     
       </body>
     </html>
   );

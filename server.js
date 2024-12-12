@@ -5,9 +5,11 @@ const cors = require("cors");
 const app = express();
 const port = 10000;
 
+// Middleware to parse incoming JSON request bodies
+app.use(express.json()); // This will parse JSON data
 
+// Enable CORS for all routes
 app.use(cors());
-
 
 // Create connection to MySQL
 const connection = mysql.createConnection({
@@ -36,6 +38,30 @@ app.get("/api/bima-score", (req, res) => {
             res.status(500).json({ error: "Failed to fetch data from the database" });
         } else {
             res.status(200).json(results);
+        }
+    });
+});
+
+// API endpoint to insert data into "getDetails" table
+app.post("/api/add-detail", (req, res) => {
+    const { customerName, callerName, customerEmail, customerContactNumber } = req.body;
+    
+    // Validate the input data
+    if (!customerName || !callerName || !customerEmail || !customerContactNumber) {
+        return res.status(400).json({ error: "All fields are required" });
+    }
+
+    // SQL query with placeholders for values
+    const query = `INSERT INTO getDetails (customerName, callerName, customerEmail, customerContactNumber) 
+                   VALUES (?, ?, ?, ?)`;
+
+    // Execute the query and pass the data as an array to prevent SQL injection
+    connection.query(query, [customerName, callerName, customerEmail, customerContactNumber], (err, result) => {
+        if (err) {
+            console.error("Error executing query:", err.message);
+            return res.status(500).json({ error: "Failed to insert data into the database" });
+        } else {
+            res.status(201).json({ message: "Data inserted successfully", id: result.insertId });
         }
     });
 });
