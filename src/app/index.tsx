@@ -52,6 +52,7 @@ export default function Home() {
       insurerName: string;
     }[]
   >([]);
+<<<<<<< HEAD
   const [submittedCallerName, setSubmittedCallerName] = useState<string | null>(
     null
   ); // New state to store the caller name
@@ -96,18 +97,35 @@ export default function Home() {
 
   const baseUrl = "http://localhost:10000";
 
+=======
+
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? "https://compareplan-1.onrender.com"
+      : "http://localhost:10000";
+
+>>>>>>> 01bb6bc56de96e78fc1ddf2528d43d98f2a80d24
   // Fetch insurers from the API on component mount
   useEffect(() => {
     const fetchInsurers = async () => {
       try {
         const response = await fetch(`${baseUrl}/api/bima-score`);
         const data: ApiResponseItem[] = await response.json();
+<<<<<<< HEAD
         // Transform the raw JSON data
         const formattedData = data.reduce(
           (acc: Insurer[], item: ApiResponseItem) => {
             const insurerIndex = acc.findIndex(
               (insurer) => insurer.name === item.Company
             );
+=======
+
+        // Filter out invalid entries and transform data
+        const formattedData = data
+          .filter(item => item.Company && item.Company.trim() !== "") // Filter invalid entries
+          .reduce((acc: Insurer[], item: ApiResponseItem) => {
+            const insurerIndex = acc.findIndex((insurer) => insurer.name === item.Company);
+>>>>>>> 01bb6bc56de96e78fc1ddf2528d43d98f2a80d24
             if (insurerIndex === -1) {
               acc.push({ name: item.Company, plans: [item.Plan] });
             } else {
@@ -116,14 +134,23 @@ export default function Home() {
               }
             }
             return acc;
+<<<<<<< HEAD
           },
           []
         );
+=======
+          }, []);
+
+>>>>>>> 01bb6bc56de96e78fc1ddf2528d43d98f2a80d24
         setInsurers(formattedData);
       } catch (error) {
         console.error("Error fetching insurers:", error);
       }
     };
+<<<<<<< HEAD
+=======
+
+>>>>>>> 01bb6bc56de96e78fc1ddf2528d43d98f2a80d24
     fetchInsurers();
   }, []);
 

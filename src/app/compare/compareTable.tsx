@@ -18,10 +18,18 @@ type InsuranceData = {
   plan2: string | number;
   plan3?: string | number; // Optional for dynamic handling
 };
+<<<<<<< HEAD
 const baseUrl =
   process.env.NODE_ENV === "production"
     ? "https://compareplan-1.onrender.com"
     : "http://localhost:10000";
+=======
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? "https://compareplan-1.onrender.com"
+      : "http://localhost:10000";
+
+>>>>>>> 01bb6bc56de96e78fc1ddf2528d43d98f2a80d24
 // Define Props Interface
 type InsuranceTableProps = {
   slug?: string; // Optional, fetched from useParams if not passed directly
@@ -37,32 +45,36 @@ const InsuranceTable: React.FC<InsuranceTableProps> = ({ slug }) => {
   const mostImportantFeatures = [
     "ROOM RENT",
     "MATERNITY",
-    "POST-HOSPITALIZATION",
-    "PRE HOSPITALIZATION",
+    "CO-PAYMENT FOR TREATMENT IN A HIGHER ZONE",
+    "CONSUMABLES",
+    "ORGAN DONOR",
     "AMBULANCE COVER",
     "RESTORE BENEFIT",
     "MENTAL ILLNESS",
-    "TPA",
-    "AIR AMBULANCE",
+    "TELECONSULTATIONS/E CONSULTATIONS",
+    "GLOBAL COVER",
   ];
   const additionalFeatures = [
-    "GLOBAL COVER",
     "ANNUAL PREVENTIVE HEALTH CHECK-UP COVER",
     "AYUSH BENEFIT",
     "OUT-PATIENT TREATMENT (OPD)",
     "MODERN TREATMENT",
     "BARIATRIC SURGERY",
-    "TELECONSULTATIONS/E CONSULTATIONS",
     "SECOND OPINION/ E OPINION",
-    "CONSUMABLES",
+    "CO-PAYMENT FOR SENIOR AGE",
+    "CO PAYMENT OUT OF NETWORK",
+    "CUMULATIVE BONUS",
+    "POST-HOSPITALIZATION",
+    "PRE HOSPITALIZATION",
+    "TPA",
+    "DOMICILLAIRY TREATMENT",
   ];
   const leastImportantFeatures = [
     "ORGAN DONOR",
-    "CO-PAYMENT FOR SENIOR AGE",
-    "CO PAYMENT OUT OF NETWORK",
-    "CO-PAYMENT FOR TREATMENT IN A HIGHER ZONE",
     "NEW BORN BABY COVER",
-    "CUMULATIVE BONUS",
+    "MATERNITY",
+    "AIR AMBULANCE",
+  "OUT-PATIENT TREATMENT (OPD)",
   ];
   useEffect(() => {
     if (resolvedSlug) {
